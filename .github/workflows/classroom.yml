@@ -1,0 +1,85 @@
+name: Autograding Tests
+
+on:
+  push:
+  repository_dispatch:
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+
+      - name: checkProjectCompiles
+        id: checkProjectCompiles
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: projectCompiles
+          setup-command: ''
+          command: ./gradlew test --tests at.ac.hcw.maze.MazeTest.testSimplePathRight
+          timeout: 1
+          max-score: 1
+
+      - name: testBasicPaths
+        id: testBasicPaths
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: testBasicPaths
+          setup-command: ''
+          command: ./gradlew test --tests at.ac.hcw.maze.MazeTest.testSimplePathRight --tests at.ac.hcw.maze.MazeTest.testStartOnTarget
+          timeout: 1
+          max-score: 1
+
+      - name: testNoPathReturnsZeroAndMarksDeadEnd
+        id: testNoPathReturnsZeroAndMarksDeadEnd
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: testNoPathReturnsZeroAndMarksDeadEnd
+          setup-command: ''
+          command: ./gradlew test --tests at.ac.hcw.maze.MazeTest.testNoPathReturnsZeroAndMarksDeadEnd
+          timeout: 1
+          max-score: 1
+
+      - name: testOrderAndDeadEnd
+        id: testOrderAndDeadEnd
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: testOrderAndDeadEnd
+          setup-command: ''
+          command: ./gradlew test --tests at.ac.hcw.maze.MazeTest.testUniquePathSimpleMaze --tests at.ac.hcw.maze.MazeTest.testDeadEndsHandledCorrectly
+          timeout: 1
+          max-score: 1
+
+      - name: testLargeMazes
+        id: testLargeMazes
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: testLargeMazes
+          setup-command: ''
+          command: ./gradlew test --tests at.ac.hcw.maze.MazeTest.testLargeMazeUniquePathSolvable --tests at.ac.hcw.maze.MazeTest.testLargeMazeUnsolvable
+          timeout: 1
+          max-score: 1
+
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          CHECKPROJECTCOMPILES_RESULTS: "${{steps.checkProjectCompiles.outputs.result}}"
+          TESTBASICPATHS_RESULTS: "${{steps.testBasicPaths.outputs.result}}"
+          TESTNOPATHRETURNSZEROANDMARKSDEADEND_RESULTS: "${{steps.testNoPathReturnsZeroAndMarksDeadEnd.outputs.result}}"
+          TESTORDERANDDEADEND_RESULTS: "${{steps.testOrderAndDeadEnd.outputs.result}}"
+          TESTLARGEMAZES_RESULTS: "${{steps.testLargeMazes.outputs.result}}"
+        with:
+          runners: checkProjectCompiles,testBasicPaths,testNoPathReturnsZeroAndMarksDeadEnd,testOrderAndDeadEnd,testLargeMazes
